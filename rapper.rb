@@ -37,6 +37,7 @@ class DbConnection
         obj = klass.new
         columns = row.keys
         columns.each do |col|
+          puts col
           if obj.respond_to? :"#{col}="
             obj.send(:"#{col}=", row[col])
           end
@@ -54,7 +55,8 @@ end
 
 
 conn = DbConnection.new(dbname: 'postgres')
-#results = conn.query query: "select * from pg_stat_activity" do |row|
+
+#results = conn.query query: "select usename, 999 as procpid  from pg_stat_activity" do |row|
 #  stat = Stat.new
 #  stat.procpid = row.values_at('procpid')
 #  stat.usename = row.values_at('usename')
@@ -62,10 +64,9 @@ conn = DbConnection.new(dbname: 'postgres')
 #  stat
 #end
 
-#puts results.inspect
+#puts results[0].inspect
 
-results = conn.query(query: "select * from pg_stat_activity", klass: Stat)
+results = conn.query(query: "select usename, pid as procpid from pg_stat_activity", klass: Stat)
 
-puts results[0].usename
-puts results[0].procpid
+puts results[0].inspect
 
