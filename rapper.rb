@@ -25,12 +25,23 @@ class DbConnection
     @conn = PG.connect(connection)
   end
 
-  def query(query, parameters = [], &mapper)
+  def query(query: nil, parameters: [], klass: nil, &mapper)
     result = @conn.exec_params(query, parameters )
     list = []
     if block_given?
       result.each do |row|
         list << mapper.call(row) 
+      end
+    else
+      result.each do |row| 
+        obj = klass.new
+        columns = row.keys
+        columns.each do |col|
+          if obj.respond_to? :"#{col}="
+            obj.send(:"#{col}=", row[col])
+          end
+        end
+        list << obj
       end
     end
     return list
@@ -43,13 +54,18 @@ end
 
 
 conn = DbConnection.new(dbname: 'postgres')
-results = conn.query "select * from pg_stat_activity" do |row|
-  stat = Stat.new
-  stat.procpid = row.values_at('procpid')
-  stat.usename = row.values_at('usename')
-  stat.current_query = row.values_at('current_query')
-  stat
-end
+#results = conn.query query: "select * from pg_stat_activity" do |row|
+#  stat = Stat.new
+#  stat.procpid = row.values_at('procpid')
+#  stat.usename = row.values_at('usename')
+#  stat.current_query = row.values_at('current_query')
+#  stat
+#end
 
-puts results.inspect
+#puts results.inspect
+
+results = conn.query(query: "select * from pg_stat_activity", klass: Stat)
+
+puts results[0].usename
+puts results[0].procpid
 
